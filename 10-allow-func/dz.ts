@@ -1,48 +1,58 @@
 const check = (a: number) => {
-    console.log(a)
-    return a > 0
+    return a > 0;
 }
 
-function allowFunc(criteria: (val: number) => boolean) {
-    const valueKey = Symbol();
-    
+function allowFunc<This, Value extends number>(criteria: (val: Value) => boolean) {
+    // Возвращаем декоратор accessor
     return function (
-        target: any,
-        propertyKey: string
-    ) {
-        const getter = function(this: any) {
-            return this[valueKey];
-        }
+        target: ClassAccessorDecoratorTarget<This, Value>,
+        context: ClassAccessorDecoratorContext<This, Value>
+    ): ClassAccessorDecoratorResult<This, Value> {
+        
+        return {
+            // Перехватываем чтение
+            get(this: This) {
+                // target.get вызывает оригинальный скрытый геттер
+                return target.get.call(this);
+            },
 
-        const setter = function(this: any, newVal: number) {
-            if (criteria(newVal)) {
-                this[valueKey] = newVal;
-            } else {
-                console.log("wrong value");
+            // Перехватываем запись
+            set(this: This, value: Value) {
+                if (criteria(value)) {
+                    target.set.call(this, value);
+                } else {
+                    console.log("wrong value");
+                }
+            },
+
+            // Перехватываем начальную инициализацию (если поле задано прямо в классе, например: accessor age = -5)
+            init(this: This, value: Value): Value {
+                if (criteria(value)) {
+                    return value;
+                } else {
+                    console.log("wrong value (init)");
+                    return value; // Или можно вернуть undefined, если тип позволяет
+                }
             }
-        }
-
-        Object.defineProperty(target, propertyKey, {
-            set: setter,
-            get: getter,
-            enumerable: true,
-            configurable: true
-        })
+        };
     }
 }
 
 class User {
-  @allowFunc(check)
-  age: number = 30;
+    // ВАЖНО: добавляем ключевое слово accessor
+    @allowFunc(check)
+    accessor age: number; 
+
+    constructor(age: number) {
+        this.age = age; // Это вызовет наш перехваченный set
+    }
 }
 
-const person1 = new User();
-
+const person1 = new User(30);
 console.log(person1.age); // 30
+
 person1.age = 0; // "wrong value"
 console.log(person1.age); // 30
 
 person1.age = 20;
 console.log(person1.age); // 20
-
-console.log(person1.age); // 20 
