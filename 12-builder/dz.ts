@@ -30,8 +30,8 @@ export class RequestBuilder {
         return this
     }
 
-    exec() {
-        return fetch(this.url, {method: this.reqType, headers: this.headers, body: JSON.stringify(this.body)})
+    async exec() {
+        return await fetch(this.url, {method: this.reqType, headers: this.headers, body: JSON.stringify(this.body)})
     }
 
 }
