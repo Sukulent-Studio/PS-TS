@@ -1,17 +1,10 @@
 import type { RequestTypes } from "./RequestTypes.js";
 
-interface IRequest {
+export class RequestBuilder {
     reqType: RequestTypes
     url: string
-    headers: Record<string, string>
-    body: Record<string, unknown>
-}
-
-class RequestBuilder {
-    reqType: RequestTypes
-    url: string
-    headers: Record<string, string>
-    body: Record<string, unknown>
+    headers: Record<string, string> = {}
+    body: Record<string, string> = {}
 
     setRequestType(type: RequestTypes) {
         this.reqType = type
@@ -30,20 +23,15 @@ class RequestBuilder {
         return this
     }
 
-    setBody(body: Map<string, unknown>) {
+    setBody(body: Map<string, string>) {
         body.forEach((val, key) => {
             this.body[key] = val
         })
         return this
     }
 
-    exec(): IRequest {
-        return {
-            reqType: this.reqType,
-            url: this.url,
-            body: this.body,
-            headers: this.headers
-        }
+    exec() {
+        return fetch(this.url, {method: this.reqType, headers: this.headers, body: JSON.stringify(this.body)})
     }
 
 }
